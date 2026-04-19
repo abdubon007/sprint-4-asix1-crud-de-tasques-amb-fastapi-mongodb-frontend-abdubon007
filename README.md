@@ -1,103 +1,125 @@
-### Estructura del projecte
+# Documentació Sprint 4 — Gestor de Llibres
+ 
+**Alumne:** Abdullah Muhammad Jabeen  
+**Curs:** ASIX1 — 25/26  
+**Professors:** Maria Merino / Eros Vilar
+ 
+---
+ 
+## Introducció
+ 
+En aquest sprint he desenvolupat una aplicació web completa per gestionar una llista de llibres. L'aplicació té un backend amb FastAPI connectat a MongoDB Atlas, i un frontend fet amb HTML, CSS i JavaScript que permet fer totes les operacions CRUD des del navegador.
+ 
+- URL de l'API: `http://127.0.0.1:8000`
+- Col·lecció MongoDB: `books`
+---
+ 
+## 1. Documentació automàtica — Swagger
+ 
+FastAPI genera automàticament una interfície Swagger accessible a `http://127.0.0.1:8000/docs`. Des d'aquí es poden veure i provar tots els endpoints de l'API.
+ <img width="710" height="817" alt="Captura de pantalla 2026-04-19 234334" src="https://github.com/user-attachments/assets/be3a2e2e-597c-4d15-b04c-386d72e8f460" />
 
-A diferència d’altres projectes més complexos, en aquest cas **treballareu amb una estructura simple**, igual que a l’exemple oficial. Tot el backend s’ubica en un únic fitxer (`app.py`), amb l’objectiu de centrar-se en **aprendre CRUD amb FastAPI i MongoDB** abans de **modularitzar el codi**.
-
-El projecte ha de mantenir una **estructura com aquesta**:
-
+ 
+---
+ 
+## 2. Tests amb Postman
+ 
+He creat una col·lecció a Postman amb totes les peticions CRUD per comprovar que l'API funciona correctament.
+ 
+### 2.1 POST /books/ — Crear un llibre
+ 
+He enviat un JSON amb les dades del llibre. La resposta ha estat **201 Created** amb l'`_id` generat per MongoDB.
+ 
+```json
+{
+  "titol": "Harry Potter i la Pedra Filosofal",
+  "autor": "J.K. Rowling",
+  "estat": "pendent",
+  "valoracio": 5,
+  "categoria": "fantasia",
+  "persona": "Abdullah"
+}
 ```
-project/
-├── README.md
-├── backend/                # FastAPI + MongoDB
-│   ├── app.py              # Fitxer principal (tota la lògica)
-│   └── requirements.txt    # Dependències
-│
-├── frontend/           # Interfície web
-│   ├── index.html
-│   ├── style.css
-│   └── app.js
-│
-└── tests/              # Tests amb Postman
-    └── Postman_API_tests.json
+ <img width="710" height="817" alt="Captura de pantalla 2026-04-19 234334" src="https://github.com/user-attachments/assets/ba28b960-90ff-41c7-af73-931243f6726a" />
+
+ 
+---
+ 
+### 2.2 GET /books/ — Llistar tots els llibres
+ 
+He comprovat que el llibre creat apareix a la llista. No cal enviar cap body. La resposta ha estat **200 OK**.
+<img width="953" height="965" alt="Captura de pantalla 2026-04-19 234201" src="https://github.com/user-attachments/assets/45e1b813-ba56-4777-8ad2-fcfe34a44ab1" /> 
+
+ 
+---
+ 
+### 2.3 GET /books/{id} — Obtenir un llibre per ID
+ 
+He utilitzat l'`_id` retornat en el POST per obtenir el llibre concret. La resposta ha estat **200 OK**.
+ 
+<img width="950" height="832" alt="Captura de pantalla 2026-04-19 234509" src="https://github.com/user-attachments/assets/a72fe6ad-9f55-4dcb-bfa6-33039d7f1a54" />
+ 
+---
+ 
+### 2.4 PUT /books/{id} — Actualitzar un llibre
+ 
+He canviat l'estat a `llegit` i la valoració. Només he enviat els camps que volia modificar. La resposta ha estat **200 OK**.
+ 
+```json
+{
+  "estat": "llegit",
+  "valoracio": 4
+}
 ```
-#### Fitxer `app.py`
+ 
+<img width="705" height="812" alt="image" src="https://github.com/user-attachments/assets/9509c4a8-4603-4445-b8d0-472de5b2454c" />
 
-En projectes més complexos, es separaria, per exemple, la connexió a MongoDB en un fitxer a banda, anomenat `database.py`; i, els models, en `models.py`.
-En el nostre cas, tot el backend l'implementarem dins del fitxer `app.py` per simplificar.
+ 
+---
+ 
+### 2.5 DELETE /books/{id} — Eliminar un llibre
+ 
+He eliminat el llibre pel seu ID. La resposta **204 No Content** confirma que s'ha eliminat correctament.
+ 
+<img width="950" height="1032" alt="Captura de pantalla 2026-04-19 234609" src="https://github.com/user-attachments/assets/62346938-710e-4131-86bb-c94b0f20c8cc" />
 
-Tot i això, és **molt recomanable**:
-- Afegir **grans comentaris per separar lògica** de connexió, models i endpoints.
-- **Documentar clarament cada secció** per facilitar la lectura i localització d’errors.
+ 
+---
+ 
+## 3. Frontend
+ 
+He creat una interfície web senzilla amb HTML, CSS i JavaScript que permet fer totes les operacions CRUD des del navegador.
+ 
+### Llistar tots els llibres
+ 
+<img width="907" height="253" alt="Captura de pantalla 2026-04-20 001912" src="https://github.com/user-attachments/assets/495b0a97-d8ec-4d9b-91a0-7e60a1513901" />
 
-Un bon exemple seria aquest:
-```python
-import os
-from typing import Optional, List
+ 
+### Buscar per ID
+ 
 
-from fastapi import FastAPI, Body, HTTPException, status
-from fastapi.responses import Response
-from pydantic import ConfigDict, BaseModel, Field, EmailStr
-from pydantic.functional_validators import BeforeValidator
-from typing_extensions import Annotated
+<img width="836" height="270" alt="Captura de pantalla 2026-04-20 001926" src="https://github.com/user-attachments/assets/d8235c67-d92c-458b-bd50-8085760ff534" />
 
-from bson import ObjectId
-import asyncio
-from pymongo import AsyncMongoClient
-from pymongo import ReturnDocument
+ 
+### Actualitzar un llibre
+ 
+<img width="821" height="571" alt="Captura de pantalla 2026-04-20 001945" src="https://github.com/user-attachments/assets/4c8debda-107c-4065-9fe3-e4ab048d8dd9" />
+ 
+### Eliminar un llibre
+ 
+<img width="621" height="141" alt="Captura de pantalla 2026-04-20 002002" src="https://github.com/user-attachments/assets/781b3c07-bc1d-4ed5-8129-7fe28160800a" />
 
-# ------------------------------------------------------------------------ #
-#                         Inicialització de l'aplicació                    #
-# ------------------------------------------------------------------------ #
-# Creació de la instància FastAPI amb informació bàsica de l'API
-app = FastAPI(
-    title="Student Course API",
-    summary="Exemple d'API REST amb FastAPI i MongoDB per gestionar informació d'estudiants",
-)
-
-# ------------------------------------------------------------------------ #
-#                   Configuració de la connexió amb MongoDB               #
-# ------------------------------------------------------------------------ #
-# Creem el client de MongoDB utilitzant la URL de connexió emmagatzemada
-# a les variables d'entorn. Això evita incloure credencials dins del codi.
-client = AsyncMongoClient(os.environ["MONGODB_URL"])
-
-# Selecció de la base de dades i de la col·lecció
-db = client.college
-student_collection = db.get_collection("students")
-
-# Els documents de MongoDB tenen `_id` de tipus ObjectId.
-# Aquí definim PyObjectId com un string serialitzable per JSON,
-# que serà utilitzat als models Pydantic.
-PyObjectId = Annotated[str, BeforeValidator(str)]
-
-# ------------------------------------------------------------------------ #
-#                            Definició dels models                        #
-# ------------------------------------------------------------------------ #
-class StudentModel(BaseModel):
-    """
-    Model que representa un estudiant.
-    Conté tots els camps obligatoris i opcional `_id`.
-    """
-    # Clau primària de l'estudiant. 
-    # MongoDB utilitza `_id`, però l'API exposa aquest camp com `id`.
-    id: Optional[PyObjectId] = Field(alias="_id", default=None)
-    
-    # Camps obligatoris de l'estudiant
-    name: str = Field(...)
-    email: EmailStr = Field(...)
-    course: str = Field(...)
-    gpa: float = Field(..., le=4.0)
-
-    # Configuració addicional del model Pydantic
-    model_config = ConfigDict(
-        populate_by_name=True,  # Permet utilitzar alias al serialitzar/deserialitzar
-        arbitrary_types_allowed=True,  # Permet tipus personalitzats com ObjectId
-        json_schema_extra={
-            "example": {
-                "name": "Jane Doe",
-                "email": "jdoe@example.com",
-                "course": "Experiments, Science, and Fashion in Nanophotonics",
-                "gpa": 3.0,
-            }
-        },
-    )
-```
+ 
+---
+ 
+## 4. Conclusions
+ 
+Tots els endpoints han funcionat correctament:
+ 
+| Endpoint | Codi | Resultat |
+|----------|------|----------|
+| POST /books/ | 201 | Llibre creat correctament |
+| GET /books/ | 200 | Llistat complet retornat |
+| GET /books/{id} | 200 | Llibre concret trobat |
+| PUT /books/{id} | 200 | Llibre actualitzat correctament |
+| DELETE /books/{id} | 204 | Llibre eliminat (No Content) |<img width="710" height="817" alt="Captura de pantalla 2026-04-19 234334" src="https://github.com/user-attachments/assets/c5384ac4-9ac3-4e4a-8467-a1b2e244616f" />
