@@ -1,70 +1,186 @@
 import os
 from typing import Optional, List
-
-from fastapi import FastAPI, Body, HTTPException, status
+from fastapi import FastAPI, HTTPException, status
 from fastapi.responses import Response
-from pydantic import ConfigDict, BaseModel, Field, EmailStr
+from fastapi.middleware.cors import CORSMiddleware
+from pydantic import ConfigDict, BaseModel, Field
 from pydantic.functional_validators import BeforeValidator
 from typing_extensions import Annotated
-
 from bson import ObjectId
-import asyncio
-from pymongo import AsyncMongoClient
-from pymongo import ReturnDocument
+from pymongo import AsyncMongoClient, ReturnDocument
+from dotenv import load_dotenv
+
+load_dotenv()
 
 # ------------------------------------------------------------------------ #
-#                         Inicialització de l'aplicació                    #
+#                        Inicialització de l'aplicació                     #
 # ------------------------------------------------------------------------ #
-# Creació de la instància FastAPI amb informació bàsica de l'API
+
 app = FastAPI(
-    title="Student Course API",
-    summary="Exemple d'API REST amb FastAPI i MongoDB per gestionar informació d'estudiants",
+    title="Gestor de Llibres API",
+    summary="API REST amb FastAPI i MongoDB per gestionar llibres",
+    version="1.0.0",
+)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 # ------------------------------------------------------------------------ #
-#                   Configuració de la connexió amb MongoDB                #
+#                     Configuració connexió MongoDB                        #
 # ------------------------------------------------------------------------ #
-# Creem el client de MongoDB utilitzant la URL de connexió emmagatzemada
-# a les variables d'entorn. Això evita incloure credencials dins del codi.
+
 client = AsyncMongoClient(os.environ["MONGODB_URL"])
+db = client.sprint4
+book_collection = db.get_collection("books")
 
-# Selecció de la base de dades i de la col·lecció
-db = client.college
-student_collection = db.get_collection("students")
-
-# Els documents de MongoDB tenen `_id` de tipus ObjectId.
-# Aquí definim PyObjectId com un string serialitzable per JSON,
-# que serà utilitzat als models Pydantic.
 PyObjectId = Annotated[str, BeforeValidator(str)]
 
 # ------------------------------------------------------------------------ #
-#                            Definició dels models                         #
+#                          Definició dels models                           #
 # ------------------------------------------------------------------------ #
-class StudentModel(BaseModel):
-    """
-    Model que representa un estudiant.
-    Conté tots els camps obligatoris i opcional `_id`.
-    """
-    # Clau primària de l'estudiant. 
-    # MongoDB utilitza `_id`, però l'API exposa aquest camp com `id`.
-    id: Optional[PyObjectId] = Field(alias="_id", default=None)
-    
-    # Camps obligatoris de l'estudiant
-    name: str = Field(...)
-    email: EmailStr = Field(...)
-    course: str = Field(...)
-    gpa: float = Field(..., le=4.0)
 
-    # Configuració addicional del model Pydantic
+class BookModel(BaseModel):
+    id: Optional[PyObjectId] = Field(alias="_id", default=None)
+    titol: str = Field(...)
+    autor: str = Field(...)
+    estat: str = Field(default="pendent")       # pendent / llegit
+    valoracio: int = Field(default=1, ge=1, le=5)  # 1 - 5
+    categoria: str = Field(default="general")
+    persona: str = Field(...)
+
     model_config = ConfigDict(
-        populate_by_name=True,  # Permet utilitzar alias al serialitzar/deserialitzar
-        arbitrary_types_allowed=True,  # Permet tipus personalitzats com ObjectId
+        populate_by_name=True,
+        arbitrary_types_allowed=True,
         json_schema_extra={
             "example": {
-                "name": "Jane Doe",
-                "email": "jdoe@example.com",
-                "course": "Experiments, Science, and Fashion in Nanophotonics",
-                "gpa": 3.0,
+                "titol": "El Senyor dels Anells",
+                "autor": "J.R.R. Tolkien",
+                "estat": "pendent",
+                "valoracio": 5,
+                "categoria": "fantasia",
+                "persona": "Abdullah"
             }
         },
     )
+
+
+class UpdateBookModel(BaseModel):
+    titol: Optional[str] = None
+    autor: Optional[str] = None
+    estat: Optional[str] = None
+    valoracio: Optional[int] = None
+    categoria: Optional[str] = None
+    persona: Optional[str] = None
+
+    model_config = ConfigDict(
+        arbitrary_types_allowed=True,
+        json_schema_extra={
+            "example": {
+                "estat": "llegit",
+                "valoracio": 4
+            }
+        },
+    )
+
+
+class BookCollection(BaseModel):
+    books: List[BookModel]
+
+
+# ------------------------------------------------------------------------ #
+#                         Endpoints CRUD + Filtres                         #
+# ------------------------------------------------------------------------ #
+
+# ── CREATE ───────────────────────────────────────────────────────────────
+
+@app.post(
+    "/books/",
+    response_model=BookModel,
+    status_code=status.HTTP_201_CREATED,
+    summary="Crear un nou llibre",
+)
+async def create_book(book: BookModel):
+    new_book = await book_collection.insert_one(
+        book.model_dump(by_alias=True, exclude=["id"])
+    )
+    created_book = await book_collection.find_one({"_id": new_book.inserted_id})
+    return created_book
+
+
+# ── READ ALL ─────────────────────────────────────────────────────────────
+
+@app.get(
+    "/books/",
+    response_model=BookCollection,
+    summary="Llistar tots els llibres",
+)
+async def list_books():
+    return BookCollection(books=await book_collection.find().to_list(1000))
+
+
+# ── READ BY ID ───────────────────────────────────────────────────────────
+
+@app.get(
+    "/books/{id}",
+    response_model=BookModel,
+    summary="Obtenir un llibre per ID",
+)
+async def show_book(id: str):
+    book = await book_collection.find_one({"_id": ObjectId(id)})
+    if book is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Llibre amb ID '{id}' no trobat"
+        )
+    return book
+
+
+# ── UPDATE ───────────────────────────────────────────────────────────────
+
+@app.put(
+    "/books/{id}",
+    response_model=BookModel,
+    summary="Actualitzar un llibre existent",
+)
+async def update_book(id: str, book: UpdateBookModel):
+    book_data = {k: v for k, v in book.model_dump().items() if v is not None}
+
+    if len(book_data) >= 1:
+        updated = await book_collection.find_one_and_update(
+            {"_id": ObjectId(id)},
+            {"$set": book_data},
+            return_document=ReturnDocument.AFTER,
+        )
+        if updated is not None:
+            return updated
+
+    existing = await book_collection.find_one({"_id": ObjectId(id)})
+    if existing is not None:
+        return existing
+
+    raise HTTPException(
+        status_code=status.HTTP_404_NOT_FOUND,
+        detail=f"Llibre amb ID '{id}' no trobat"
+    )
+
+
+# ── DELETE ───────────────────────────────────────────────────────────────
+
+@app.delete(
+    "/books/{id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+    summary="Eliminar un llibre",
+)
+async def delete_book(id: str):
+    result = await book_collection.delete_one({"_id": ObjectId(id)})
+    if result.deleted_count != 1:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Llibre amb ID '{id}' no trobat"
+        )
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
