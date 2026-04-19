@@ -1,9 +1,81 @@
-<!doctype html>
-<html>
-  <head>
-    <title>This is the title of the webpage!</title>
-  </head>
-  <body>
-    <p>This is an example paragraph. Anything in the <strong>body</strong> tag will appear on the page, just like this <strong>p</strong> tag and its contents.</p>
-  </body>
+<!DOCTYPE html>
+<html lang="ca">
+<head>
+  <meta charset="UTF-8" />
+  <title>Gestor de Llibres</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+ 
+  <h1>Gestor de Llibres</h1>
+  <p>FastAPI + MongoDB</p>
+ 
+  <hr>
+ 
+  <!-- CREAR -->
+  <h2>Afegir Llibre (POST)</h2>
+  <input id="titol" type="text" placeholder="Títol" /><br>
+  <input id="autor" type="text" placeholder="Autor" /><br>
+  <select id="estat">
+    <option value="pendent">Pendent</option>
+    <option value="llegit">Llegit</option>
+  </select><br>
+  <select id="valoracio">
+    <option value="1">1 estrella</option>
+    <option value="2">2 estrelles</option>
+    <option value="3">3 estrelles</option>
+    <option value="4">4 estrelles</option>
+    <option value="5">5 estrelles</option>
+  </select><br>
+  <input id="categoria" type="text" placeholder="Categoria" /><br>
+  <input id="persona" type="text" placeholder="Persona" /><br>
+  <button onclick="createBook()">Crear</button>
+  <p id="create-msg"></p>
+ 
+  <hr>
+ 
+  <!-- LLISTAR -->
+  <h2>Tots els Llibres (GET)</h2>
+  <button onclick="loadBooks()">Carregar tots</button>
+  <div id="book-list"></div>
+ 
+  <hr>
+ 
+  <!-- BUSCAR PER ID -->
+  <h2>Buscar per ID (GET)</h2>
+  <input id="search-id" type="text" placeholder="ID del llibre" />
+  <button onclick="getBookById()">Buscar</button>
+  <div id="book-detail"></div>
+ 
+  <hr>
+ 
+  <!-- ACTUALITZAR -->
+  <h2>Actualitzar Llibre (PUT)</h2>
+  <input id="update-id" type="text" placeholder="ID del llibre" /><br>
+  <select id="update-estat">
+    <option value="">-- No canviar --</option>
+    <option value="pendent">Pendent</option>
+    <option value="llegit">Llegit</option>
+  </select><br>
+  <select id="update-valoracio">
+    <option value="">-- No canviar --</option>
+    <option value="1">1 estrella</option>
+    <option value="2">2 estrelles</option>
+    <option value="3">3 estrelles</option>
+    <option value="4">4 estrelles</option>
+    <option value="5">5 estrelles</option>
+  </select><br>
+  <button onclick="updateBook()">Actualitzar</button>
+  <p id="update-msg"></p>
+ 
+  <hr>
+ 
+  <!-- ELIMINAR -->
+  <h2>Eliminar Llibre (DELETE)</h2>
+  <input id="delete-id" type="text" placeholder="ID del llibre" />
+  <button onclick="deleteBook()">Eliminar</button>
+  <p id="delete-msg"></p>
+ 
+  <script src="javascript.js"></script>
+</body>
 </html>
